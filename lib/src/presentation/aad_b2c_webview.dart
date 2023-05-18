@@ -232,6 +232,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
         widget.responseType +
         promptParam +
         codeChallenge +
-        codeChallengeMethod;
+        codeChallengeMethod +
+        "&app=hpp";
   }
 }
