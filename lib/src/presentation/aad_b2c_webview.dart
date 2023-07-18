@@ -14,7 +14,7 @@ class ADB2CEmbedWebView extends StatefulWidget {
   final String clientId;
   final String redirectUrl;
   final String userFlowName;
-  final Function(BuildContext context)? onRedirect;
+  final Function(BuildContext context, String url)? onRedirect;
   final ValueChanged<Token> onAccessToken;
   final ValueChanged<Token> onIDToken;
   final ValueChanged<Token> onRefreshToken;
@@ -124,7 +124,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
       if (!mounted) return;
       // call redirect function
       handleTokenCallbacks(tokensData: tokensData);
-      onRedirect(context);
+      onRedirect(context, url);
     }
   }
 
@@ -135,12 +135,12 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
         //Navigate to the redirect route screen; check for mounted component
         if (!mounted) return;
         //call redirect function
-        onRedirect(context);
+        onRedirect(context, response.path);
       } else if (url.contains(Constants.accessToken)) {
         //Navigate to the redirect route screen; check for mounted component
         if (!mounted) return;
         //call redirect function
-        onRedirect(context);
+        onRedirect(context, response.path);
       } else if (url.contains(Constants.authCode)) {
         //Run authorization code flow and get access token.
         authorizationCodeFlow(url);
@@ -157,31 +157,39 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
             key: _key,
             debuggingEnabled: true,
             initialUrl: getUserFlowUrl(
-                userFlow:"${widget.tenantBaseUrl}/${Constants.userFlowUrlEnding}"),
+                userFlow:
+                    "${widget.tenantBaseUrl}/${Constants.userFlowUrlEnding}"),
             javascriptMode: JavascriptMode.unrestricted,
+            navigationDelegate: (navigation) {
+              if (navigation.url.startsWith(widget.redirectUrl)) {
+                return NavigationDecision.prevent;
+              }
+              return NavigationDecision.navigate;
+            },
             onPageFinished: (String url) {
-              setState(() {
-                isLoading = false;
-              });
+              if (mounted) {
+                setState(() {
+                  isLoading = false;
+                });
 
-              final Uri response = Uri.dataFromString(url);
-              //Check that the user is past authentication and current URL is the redirect with the code.
-              onPageFinishedTasks(url, response);
+                final Uri response = Uri.dataFromString(url);
+                //Check that the user is past authentication and current URL is the redirect with the code.
+                onPageFinishedTasks(url, response);
+              }
             },
           ),
           Visibility(
-            visible: (isLoading || showRedirect),
-            child: const Center(
-              child: SizedBox(
-                height: 250,
-                width: 250,
-                child: CircularProgressIndicator(
-                  backgroundColor: Colors.white,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              visible: (isLoading || showRedirect),
+              child: const Center(
+                child: SizedBox(
+                  height: 250,
+                  width: 250,
+                  child: CircularProgressIndicator(
+                    backgroundColor: Colors.white,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                  ),
                 ),
-              ),
-            ) 
-          ),
+              )),
           Visibility(
             visible: isLoading,
             child: const Positioned(
@@ -228,7 +236,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
     final codeChallenge = "&code_challenge=${pkcePairInstance.codeChallenge}";
 
     String newParameters = "";
-    if(widget.optionalParameters.isNotEmpty){
+    if (widget.optionalParameters.isNotEmpty) {
       for (OptionalParam param in widget.optionalParameters) {
         newParameters += "&${param.key}=${param.value}";
       }
@@ -247,7 +255,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
         widget.responseType +
         promptParam +
         codeChallenge +
-        codeChallengeMethod+
+        codeChallengeMethod +
         newParameters;
   }
 }

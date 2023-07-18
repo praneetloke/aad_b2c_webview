@@ -1,5 +1,5 @@
+import 'package:aad_b2c/home.dart';
 import 'package:aad_b2c_webview/aad_b2c_webview.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -68,13 +68,15 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    const aadB2CClientID = "<clientId>";
-    const aadB2CRedirectURL = "<azure_active_directory_url_redirect>";
-    const aadB2CUserFlowName = "B2C_<name_of_userflow>";
+    const aadB2CClientID = "df3d9424-f1fd-4911-afd0-7d00b89d7598";
+    //const aadB2CRedirectURL = "https://nnoxxteam.nnoxx-staging.com/";
+    const aadB2CRedirectURL = "nnoxx://home";
+    const aadB2CUserFlowName = "B2C_1A_signup_signin";
     const aadB2CScopes = ['openid', 'offline_access'];
     const aadB2CUserAuthFlow =
-        "https://<tenant-name>.b2clogin.com/<tenant-name>.onmicrosoft.com"; // https://login.microsoftonline.com/<azureTenantId>/oauth2/v2.0/token/
-    const aadB2TenantName = "<tenant-name>";
+        "https://nnoxxstaging.b2clogin.com/nnoxxstaging.onmicrosoft.com"; // https://login.microsoftonline.com/<azureTenantId>/oauth2/v2.0/token/
+    const aadB2TenantName = "nnoxxstaging";
+
 
     return Scaffold(
       body: Padding(
@@ -99,7 +101,18 @@ class _LoginPageState extends State<LoginPage> {
               onRefreshToken: (Token token) {
                 refreshToken = token.value;
               },
-              onRedirect: (context) => {},
+              onRedirect: (context, url) {
+                if(url.startsWith(aadB2CRedirectURL)){
+                  
+                  print("URL Match: $url");
+                  Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => const Home(),
+                  ));
+                } else {
+                  print("URL Not Match: $url");
+                }
+              },
+              optionalParameters: [OptionalParam(key: "app", value: "hpp")],
             ),
 
             /// Refresh token

@@ -19,7 +19,7 @@ void main() {
       userFlowName: '',
       clientId: '',
       redirectUrl: '',
-      onRedirect: (BuildContext context) {},
+      onRedirect: (context, _) {},
       scopes: const ['openId'],
       optionalParameters: [OptionalParam(key: "key", value: "value")],
     );
@@ -42,7 +42,7 @@ void main() {
           clientId: '',
           redirectUrl: '',
           context: null,
-          onRedirect: (BuildContext context) {},
+          onRedirect: (BuildContext context, _) {},
           scopes: const ['openId'],
         ),
       ),

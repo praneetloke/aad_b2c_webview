@@ -8,7 +8,7 @@ class AADLoginButton extends StatefulWidget {
   final String clientId;
   final String redirectUrl;
 
-  final Function(BuildContext context)? onRedirect;
+  final Function(BuildContext context, String url)? onRedirect;
   final BuildContext? context;
   final ValueChanged<Token> onAccessToken;
   final ValueChanged<Token> onIDToken;
@@ -68,6 +68,7 @@ class _AADLoginButtonState extends State<AADLoginButton> {
                     widget.onAnyTokenRetrieved!(value);
                   }
                 },
+                
                 onAccessToken: (accessToken) {
                   widget.onAccessToken(accessToken);
                 },
