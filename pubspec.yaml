@@ -4,17 +4,20 @@ version: 0.0.45
 repository: https://github.com/mohanajuhi166/aad-b2c-webview
 
 environment:
-  sdk: '>=2.18.4 <3.0.0'
+  sdk: ">=2.18.4 <3.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  webview_flutter:  ^3.0.4
+  webview_flutter: ^4.2.2
+  webview_flutter_android: ^3.6.0
+  webview_flutter_wkwebview: ^3.4.0
   google_fonts: ^4.0.3
   dio: ">=4.0.0 <6.0.0"
   pkce: ^1.1.0+1
   mockito: ^5.3.2
+  flutter_inappwebview: 6.0.0-beta.24+1
 
 dev_dependencies:
   flutter_test:
@@ -26,10 +29,9 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # To add assets to your package, add an assets section, like this:
-   assets:
-     - assets/icons8-azure-48.png
+  assets:
+    - assets/icons8-azure-48.png
   #
   # For details regarding assets in packages, see
   # https://flutter.dev/assets-and-images/#from-packages
