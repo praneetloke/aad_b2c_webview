@@ -68,6 +68,7 @@ class _AADLoginButtonState extends State<AADLoginButton> {
                     widget.onAnyTokenRetrieved!(value);
                   }
                 },
+                
                 onAccessToken: (accessToken) {
                   widget.onAccessToken(accessToken);
                 },
