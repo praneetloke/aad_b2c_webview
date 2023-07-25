@@ -117,7 +117,6 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
       }
     } catch (e) {
       debugPrint(e.toString());
-    } finally {
       _clearBusyState();
     }
   }
