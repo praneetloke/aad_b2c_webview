@@ -55,7 +55,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
   bool showRedirect = false;
 
   @override
-  void initState() async {
+  void initState() {
     onRedirect = widget.onRedirect ??
         () {
           Navigator.of(context).pop();
@@ -70,7 +70,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
 
     super.initState();
 
-    await _signInWithAutoCodeExchange();
+    _signInWithAutoCodeExchange(preferEphemeralSession: true);
   }
 
   Future<void> _signInWithAutoCodeExchange(
@@ -112,7 +112,9 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
       if (result != null) {
         handleTokenCallbacks(result);
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint(e.toString());
+    } finally {
       _clearBusyState();
     }
   }
