@@ -55,10 +55,10 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
 
   @override
   void initState() {
-    onRedirect = widget.onRedirect ??
-        () {
-          Navigator.of(context).pop();
-        };
+    // onRedirect = widget.onRedirect ??
+    //     () {
+    //       Navigator.of(context).pop();
+    //     };
 
     _serviceConfiguration = AuthorizationServiceConfiguration(
       authorizationEndpoint:
@@ -176,10 +176,10 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
       onAnyTokenReceivedCallback(token);
     }
 
-    if (!mounted) {
-      return;
-    }
-    onRedirect(context, widget.redirectUrl);
+    // if (!mounted) {
+    //   return;
+    // }
+    // onRedirect(context, widget.redirectUrl);
   }
 
   @override
