@@ -62,7 +62,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
 
     _serviceConfiguration = AuthorizationServiceConfiguration(
       authorizationEndpoint:
-          "${widget.tenantBaseUrl}/${Constants.userFlowUrlEnding}",
+          "${widget.tenantBaseUrl}/${widget.userFlowName}/${Constants.userFlowUrlEnding}",
       tokenEndpoint:
           "${widget.tenantBaseUrl}/${widget.userFlowName}/${Constants.userGetTokenUrlEnding}",
     );
@@ -77,7 +77,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
     try {
       _setBusyState();
 
-      var additionalParams = {"p": widget.userFlowName};
+      Map<String, String> additionalParams = {};
       additionalParams.addAll(widget.optionalParameters);
 
       /*
