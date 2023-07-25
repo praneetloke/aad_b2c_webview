@@ -1,11 +1,8 @@
-import 'dart:io';
-import 'package:aad_b2c_webview/src/services/client_authentication.dart';
 import 'package:aad_b2c_webview/src/services/models/optional_param.dart';
-import 'package:aad_b2c_webview/src/services/models/response_data.dart';
 import 'package:aad_b2c_webview/src/services/models/token.dart';
 import 'package:flutter/material.dart';
-import 'package:pkce/pkce.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_appauth/flutter_appauth.dart';
+
 import '../constants.dart';
 
 /// A widget that embeds the Azure AD B2C web view for authentication purposes.
@@ -49,23 +46,89 @@ class ADB2CEmbedWebView extends StatefulWidget {
 }
 
 class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
-  final PkcePair pkcePairInstance = PkcePair.generate();
-  final _key = UniqueKey();
+  final FlutterAppAuth _appAuth = const FlutterAppAuth();
+
+  late AuthorizationServiceConfiguration _serviceConfiguration;
   late Function onRedirect;
 
   bool isLoading = true;
   bool showRedirect = false;
 
   @override
-  void initState() {
+  void initState() async {
     onRedirect = widget.onRedirect ??
         () {
           Navigator.of(context).pop();
         };
 
-    //Enable virtual display.
-    if (Platform.isAndroid) WebView.platform = AndroidWebView();
+    _serviceConfiguration = AuthorizationServiceConfiguration(
+      authorizationEndpoint:
+          "${widget.tenantBaseUrl}/${Constants.userFlowUrlEnding}",
+      tokenEndpoint:
+          "{widget.tenantBaseUrl}/${widget.userFlowName}/${Constants.userGetTokenUrlEnding}",
+    );
+
     super.initState();
+
+    await _signInWithAutoCodeExchange();
+  }
+
+  Future<void> _signInWithAutoCodeExchange(
+      {bool preferEphemeralSession = false}) async {
+    try {
+      _setBusyState();
+
+      /*
+        This shows that we can also explicitly specify the endpoints rather than
+        getting from the details from the discovery document.
+      */
+      final AuthorizationTokenResponse? result =
+          await _appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(widget.clientId, widget.redirectUrl,
+            serviceConfiguration: _serviceConfiguration,
+            scopes: widget.scopes,
+            preferEphemeralSession: preferEphemeralSession,
+            promptValues: ["login"],
+            additionalParameters: {"app": "mobile", "p": widget.userFlowName}),
+      );
+
+      /* 
+        This code block demonstrates passing in values for the prompt
+        parameter. In this case it prompts the user login even if they have
+        already signed in. the list of supported values depends on the
+        identity provider
+
+        ```dart
+        final AuthorizationTokenResponse result = await _appAuth
+        .authorizeAndExchangeCode(
+          AuthorizationTokenRequest(_clientId, _redirectUrl,
+              serviceConfiguration: _serviceConfiguration,
+              scopes: _scopes,
+              promptValues: ['login']),
+        );
+        ```
+      */
+
+      if (result != null) {
+        handleTokenCallbacks(result);
+      }
+    } catch (_) {
+      _clearBusyState();
+    }
+  }
+
+  void _clearBusyState() {
+    setState(() {
+      isLoading = true;
+      showRedirect = true;
+    });
+  }
+
+  void _setBusyState() {
+    setState(() {
+      isLoading = false;
+      showRedirect = false;
+    });
   }
 
   /// Callback function for handling any token received.
@@ -76,10 +139,10 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
   }
 
   /// Handles the callbacks for the received tokens.
-  void handleTokenCallbacks({required AzureTokenResponse? tokensData}) {
-    String? accessTokenValue = tokensData?.accessToken;
-    String? idTokenValue = tokensData?.idToken;
-    String? refreshTokenValue = tokensData?.refreshToken;
+  void handleTokenCallbacks(AuthorizationTokenResponse tokensData) {
+    String? accessTokenValue = tokensData.accessToken;
+    String? idTokenValue = tokensData.idToken;
+    String? refreshTokenValue = tokensData.refreshToken;
 
     if (accessTokenValue != null) {
       final Token token =
@@ -98,53 +161,10 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
       final Token token = Token(
           type: TokenType.refreshToken,
           value: refreshTokenValue,
-          expirationTime: tokensData?.refreshTokenExpireTime);
+          expirationTime: tokensData
+              .tokenAdditionalParameters?[Constants.refreshTokenExpiresIn]);
       widget.onRefreshToken(token);
       onAnyTokenRecivedCallback(token);
-    }
-  }
-
-  // Performs the authorization code flow using the provided URL.
-  Future<void> authorizationCodeFlow(url) async {
-    String authCode = url.split("${Constants.authCode}=")[1];
-
-    ClientAuthentication clientAuthentication =
-        ClientAuthentication(pkcePair: pkcePairInstance);
-
-    final AzureTokenResponse? tokensData =
-        await clientAuthentication.getAllTokens(
-      redirectUri: widget.redirectUrl,
-      clientId: widget.clientId,
-      authCode: authCode,
-      userFlowName: widget.userFlowName,
-      tenantBaseUrl: widget.tenantBaseUrl,
-    );
-
-    if (tokensData != null) {
-      if (!mounted) return;
-      // call redirect function
-      handleTokenCallbacks(tokensData: tokensData);
-      onRedirect(context, url);
-    }
-  }
-
-  /// Executes tasks when the page finishes loading.
-  dynamic onPageFinishedTasks(String url, Uri response) {
-    if (response.path.contains(widget.redirectUrl)) {
-      if (url.contains(Constants.idToken)) {
-        //Navigate to the redirect route screen; check for mounted component
-        if (!mounted) return;
-        //call redirect function
-        onRedirect(context, response.path);
-      } else if (url.contains(Constants.accessToken)) {
-        //Navigate to the redirect route screen; check for mounted component
-        if (!mounted) return;
-        //call redirect function
-        onRedirect(context, response.path);
-      } else if (url.contains(Constants.authCode)) {
-        //Run authorization code flow and get access token.
-        authorizationCodeFlow(url);
-      }
     }
   }
 
@@ -153,31 +173,6 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
     return Scaffold(
       body: Stack(
         children: <Widget>[
-          WebView(
-            key: _key,
-            debuggingEnabled: true,
-            initialUrl: getUserFlowUrl(
-                userFlow:
-                    "${widget.tenantBaseUrl}/${Constants.userFlowUrlEnding}"),
-            javascriptMode: JavascriptMode.unrestricted,
-            navigationDelegate: (navigation) {
-              if (navigation.url.startsWith(widget.redirectUrl)) {
-                return NavigationDecision.prevent;
-              }
-              return NavigationDecision.navigate;
-            },
-            onPageFinished: (String url) {
-              if (mounted) {
-                setState(() {
-                  isLoading = false;
-                });
-
-                final Uri response = Uri.dataFromString(url);
-                //Check that the user is past authentication and current URL is the redirect with the code.
-                onPageFinishedTasks(url, response);
-              }
-            },
-          ),
           Visibility(
               visible: (isLoading || showRedirect),
               child: const Center(
@@ -201,61 +196,5 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
         ],
       ),
     );
-  }
-
-  /// Constructs the user flow URL with optional parameters.
-  String getUserFlowUrl({required String userFlow}) {
-    List<String>? userFlowSplit = userFlow.split('?');
-    //Check if the user added the full user flow or just till 'authorize'
-    if (userFlowSplit.length == 1) {
-      return concatUserFlow(userFlow);
-    }
-    return userFlow;
-  }
-
-  /// Creates a string representation of the scopes.
-  String createScopes(List<String> scopeList) {
-    String allScope = '';
-    for (String scope in scopeList) {
-      scope += '%20';
-      allScope += scope;
-    }
-    return allScope.substring(0, allScope.length - 3);
-  }
-
-  /// Concatenates the user flow URL with additional parameters.
-  String concatUserFlow(String url) {
-    const idClientParam = '&client_id=';
-    const nonceParam = '&nonce=defaultNonce&redirect_uri=';
-    const scopeParam = '&scope=';
-    const responseTypeParam = '&response_type=';
-    const promptParam = '&prompt=login';
-    const pageParam = '?p=';
-    const codeChallengeMethod =
-        '&code_challenge_method=${Constants.defaultCodeChallengeCode}';
-    final codeChallenge = "&code_challenge=${pkcePairInstance.codeChallenge}";
-
-    String newParameters = "";
-    if (widget.optionalParameters.isNotEmpty) {
-      for (OptionalParam param in widget.optionalParameters) {
-        newParameters += "&${param.key}=${param.value}";
-      }
-    }
-
-    return url +
-        pageParam +
-        widget.userFlowName +
-        idClientParam +
-        widget.clientId +
-        nonceParam +
-        widget.redirectUrl +
-        scopeParam +
-        createScopes(widget.scopes) +
-        responseTypeParam +
-        widget.responseType +
-        promptParam +
-        codeChallenge +
-        codeChallengeMethod +
-        newParameters;
   }
 }
