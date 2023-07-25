@@ -1,4 +1,5 @@
 import 'package:aad_b2c_webview/src/services/models/token.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 
@@ -10,7 +11,7 @@ class ADB2CEmbedWebView extends StatefulWidget {
   final String clientId;
   final String redirectUrl;
   final String userFlowName;
-  final Function(BuildContext context, String url)? onRedirect;
+  final AsyncCallback? onRedirect;
   final ValueChanged<Token> onAccessToken;
   final ValueChanged<Token> onIDToken;
   final ValueChanged<Token> onRefreshToken;
