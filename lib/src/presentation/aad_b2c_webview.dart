@@ -1,4 +1,3 @@
-import 'package:aad_b2c_webview/src/services/models/optional_param.dart';
 import 'package:aad_b2c_webview/src/services/models/token.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
@@ -18,7 +17,7 @@ class ADB2CEmbedWebView extends StatefulWidget {
   final ValueChanged<Token>? onAnyTokenRetrieved;
   final List<String> scopes;
   final String responseType;
-  final List<OptionalParam> optionalParameters;
+  final Map<String, String> optionalParameters;
 
   const ADB2CEmbedWebView({
     super.key,
@@ -78,19 +77,23 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
     try {
       _setBusyState();
 
+      var additionalParams = {"p": widget.userFlowName};
+      additionalParams.addAll(widget.optionalParameters);
+
       /*
         This shows that we can also explicitly specify the endpoints rather than
         getting from the details from the discovery document.
       */
       final AuthorizationTokenResponse? result =
-          await _appAuth.authorizeAndExchangeCode(
-        AuthorizationTokenRequest(widget.clientId, widget.redirectUrl,
-            serviceConfiguration: _serviceConfiguration,
-            scopes: widget.scopes,
-            preferEphemeralSession: preferEphemeralSession,
-            promptValues: ["login"],
-            additionalParameters: {"app": "mobile", "p": widget.userFlowName}),
-      );
+          await _appAuth.authorizeAndExchangeCode(AuthorizationTokenRequest(
+        widget.clientId,
+        widget.redirectUrl,
+        serviceConfiguration: _serviceConfiguration,
+        scopes: widget.scopes,
+        preferEphemeralSession: preferEphemeralSession,
+        promptValues: ["login"],
+        additionalParameters: additionalParams,
+      ));
 
       /* 
         This code block demonstrates passing in values for the prompt
@@ -134,7 +137,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
   }
 
   /// Callback function for handling any token received.
-  void onAnyTokenRecivedCallback(Token token) {
+  void onAnyTokenReceivedCallback(Token token) {
     if (widget.onAnyTokenRetrieved != null) {
       widget.onAnyTokenRetrieved!(token);
     }
@@ -147,16 +150,20 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
     String? refreshTokenValue = tokensData.refreshToken;
 
     if (accessTokenValue != null) {
-      final Token token =
-          Token(type: TokenType.accessToken, value: accessTokenValue);
+      final Token token = Token(
+          type: TokenType.accessToken,
+          value: accessTokenValue,
+          expirationTime: tokensData.accessTokenExpirationDateTime
+              ?.difference(DateTime.now())
+              .inSeconds);
       widget.onAccessToken(token);
-      onAnyTokenRecivedCallback(token);
+      onAnyTokenReceivedCallback(token);
     }
 
     if (idTokenValue != null) {
       final token = Token(type: TokenType.idToken, value: idTokenValue);
       widget.onIDToken(token);
-      onAnyTokenRecivedCallback(token);
+      onAnyTokenReceivedCallback(token);
     }
 
     if (refreshTokenValue != null) {
@@ -166,7 +173,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
           expirationTime: tokensData
               .tokenAdditionalParameters?[Constants.refreshTokenExpiresIn]);
       widget.onRefreshToken(token);
-      onAnyTokenRecivedCallback(token);
+      onAnyTokenReceivedCallback(token);
     }
   }
 

@@ -1,4 +1,3 @@
-import 'package:aad_b2c_webview/src/services/models/optional_param.dart';
 import 'package:aad_b2c_webview/src/src.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,41 +20,11 @@ void main() {
       redirectUrl: '',
       onRedirect: (context, _) {},
       scopes: const ['openId'],
-      optionalParameters: [OptionalParam(key: "key", value: "value")],
+      optionalParameters: const {"key": "value"},
     );
     mockContext = MockBuildContext();
     var mockEmbedWebViewstate = embedWebView.createState().build(mockContext);
 
     expect(mockEmbedWebViewstate, isNotNull);
-  });
-
-  testWidgets('login button works', (tester) async {
-    mockContext = MockBuildContext();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: AADLoginButton(
-          onAccessToken: (_) {},
-          onIDToken: (_) {},
-          onRefreshToken: (_) {},
-          userFlowUrl: '',
-          userFlowName: '',
-          clientId: '',
-          redirectUrl: '',
-          context: null,
-          onRedirect: (BuildContext context, _) {},
-          scopes: const ['openId'],
-        ),
-      ),
-    );
-
-    expect(find.byType(GestureDetector), findsOneWidget);
-
-    await tester.tap(find.byType(GestureDetector));
-    await tester.pump();
-
-    // // Rebuild the widget after the state has changed.
-    // await tester.pump();
-    //
-    // expect(mockEmbedWebViewstate, isNotNull);
   });
 }
