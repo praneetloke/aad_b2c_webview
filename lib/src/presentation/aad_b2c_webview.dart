@@ -175,6 +175,11 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
       widget.onRefreshToken(token);
       onAnyTokenReceivedCallback(token);
     }
+
+    if (!mounted) {
+      return;
+    }
+    onRedirect(context, widget.redirectUrl);
   }
 
   @override
