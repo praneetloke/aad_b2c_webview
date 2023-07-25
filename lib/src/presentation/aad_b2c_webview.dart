@@ -64,7 +64,7 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
       authorizationEndpoint:
           "${widget.tenantBaseUrl}/${Constants.userFlowUrlEnding}",
       tokenEndpoint:
-          "{widget.tenantBaseUrl}/${widget.userFlowName}/${Constants.userGetTokenUrlEnding}",
+          "${widget.tenantBaseUrl}/${widget.userFlowName}/${Constants.userGetTokenUrlEnding}",
     );
 
     super.initState();
