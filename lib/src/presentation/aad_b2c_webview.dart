@@ -92,7 +92,6 @@ class ADB2CEmbedWebViewState extends State<ADB2CEmbedWebView> {
         serviceConfiguration: _serviceConfiguration,
         scopes: widget.scopes,
         preferEphemeralSession: preferEphemeralSession,
-        promptValues: ["login"],
         additionalParameters: additionalParams,
       ));
 
